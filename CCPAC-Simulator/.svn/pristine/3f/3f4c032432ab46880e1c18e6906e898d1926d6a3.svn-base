@@ -1,0 +1,86 @@
+package input;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import node.Node;
+
+import main.Factory;
+import main.NodeGraph;
+
+import connection.Connection;
+import connection.SocialConnection;
+
+
+public class InputStAndrews extends Input {
+
+	public NodeGraph readNodeGraph(String fileName) throws IOException {
+		String[] columns;
+		Path path = FileSystems.getDefault().getPath(fileName);
+		List<String> lines = Files.readAllLines(path, Charset.defaultCharset());
+		int i = 0;
+		NodeGraph nodeGraph = new NodeGraph();
+
+		columns = lines.get(i++).split(", ");
+		if(!columns[0].equals("device_having_encounter"))
+			throw new IOException("INPUT ERROR: Can't find Header");
+
+		while(i<lines.size()) {
+			columns = lines.get(i++).split(", ");
+
+			String nodeAName = columns[0].trim();
+			String nodeBName = columns[1].trim();
+			Long startTime = (Long)(long)Float.parseFloat(columns[2]);
+			Long stopTime = (Long)(long)Float.parseFloat(columns[3]);
+			Node nodeA;
+			Node nodeB;
+
+			if((nodeA = nodeGraph.getNode(nodeAName)) == null) {
+				nodeA = Factory.getNode(nodeAName, true);
+				nodeGraph.addNode(nodeA);
+			}
+			if((nodeB = nodeGraph.getNode(nodeBName)) == null) {
+				nodeB = Factory.getNode(nodeBName, true);
+				nodeGraph.addNode(nodeB);
+			}
+
+			nodeGraph.addConnection(new Connection(nodeA, nodeB, 1, startTime, stopTime));
+		}
+		return nodeGraph;
+	}
+
+	public NodeGraph readNodeGraphSocial(String fileName, NodeGraph nodeGraph) throws IOException {
+		String[] columns;
+		Path path = FileSystems.getDefault().getPath(fileName);
+		List<String> lines = Files.readAllLines(path, Charset.defaultCharset());
+		int i = 0;
+
+		columns = lines.get(i++).split(", ");
+		if(!columns[0].equals("device_having_encounter"))
+			throw new IOException("INPUT ERROR: Can't find Header");
+		while(i<lines.size()) {
+			columns = lines.get(i++).split(", ");
+			String nodeAName = columns[0].trim();
+			String nodeBName = columns[1].trim();
+
+			Node nodeA;
+			Node nodeB;
+
+			if((nodeA = nodeGraph.getNode(nodeAName)) == null) {
+				nodeA = Factory.getNode(nodeAName, true);
+				nodeGraph.addNode(nodeA);
+			}
+			if((nodeB = nodeGraph.getNode(nodeBName)) == null) {
+				nodeB = Factory.getNode(nodeBName, true);
+				nodeGraph.addNode(nodeB);
+			}
+			nodeGraph.addSocialConnection(new SocialConnection(nodeA, nodeB));
+		}
+		return nodeGraph;
+	}
+
+}

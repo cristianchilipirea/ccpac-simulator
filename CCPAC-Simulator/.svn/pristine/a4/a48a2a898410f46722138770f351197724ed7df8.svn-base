@@ -1,0 +1,14 @@
+package packet;
+
+import message.Message;
+
+public class Packet {
+	public long startTime;
+	public long stopTime;
+	public Message message;
+
+	public Packet(Message message) {
+		super();
+		this.message = message;
+	}
+}

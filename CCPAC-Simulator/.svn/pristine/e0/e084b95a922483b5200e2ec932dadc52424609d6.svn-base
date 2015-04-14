@@ -1,0 +1,4 @@
+[Input]
+nodeGraphFileName = data/cambridge-haggle-imote-infocom/contacts.Exp3.dat
+nodeGraphSocialFileName =
+inputType = InputCambridgeInfocom05

@@ -1,0 +1,45 @@
+package message;
+
+import java.util.Vector;
+import packet.Packet;
+import node.Node;
+
+
+public class Message {
+	public Node startNode;
+	public Node destinationNode;
+	public int size;
+
+	Vector<Packet> packets = new Vector<Packet>();
+
+	public Message(Node startNode, Node destinationNode, Integer size) {
+		super();
+		this.startNode = startNode;
+		this.destinationNode = destinationNode;
+		this.size = size;
+	}
+
+	public void addPacket(Packet packet) {
+		packets.add(packet);
+	}
+
+	public String toString() {
+		return "("+startNode.name+" "+destinationNode.name+")";
+	}
+
+	public long getStopTime() {
+		long max=0;
+		for(Packet p:packets)
+			if(max < p.stopTime)
+				max = p.stopTime;
+		return max;
+	}
+
+	public long getStartTime() {
+		long min = Long.MAX_VALUE;
+		for (Packet p : packets)
+			if (min > p.startTime)
+				min = p.startTime;
+		return min;
+	}
+}

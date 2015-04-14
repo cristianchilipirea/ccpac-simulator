@@ -1,0 +1,108 @@
+package node;
+
+import java.util.ArrayList;
+
+import packet.Packet;
+import utils.CliqueAlg;
+
+import main.Main;
+import main.NodeGraph;
+import message.Message;
+
+public class NodeGetGraph extends Node {
+	Packet packet = new Packet(new Message(this, this, 0));
+	public static ArrayList<Element> graph = new ArrayList<Element>();
+	static boolean canPrint = true;
+	static boolean computeCliques = true;
+	NodeGraph nodeGraph = null;
+
+	public static class Element {
+		public Node nodeA;
+		public Node nodeB;
+		public long weight;
+
+		public Element(Node nodeA, Node nodeB) {
+			this.nodeA = nodeA;
+			this.nodeB = nodeB;
+			weight = 1;
+		}
+
+		public boolean equals(Object element) {
+			Element el = (Element)element;
+			if(this.nodeA == el.nodeA && this.nodeB == el.nodeB)
+				return true;
+			if(this.nodeB == el.nodeA && this.nodeA == el.nodeB)
+				return true;
+			return false;
+		}
+
+		public String toString() {
+			return nodeA.name + "\t" + nodeB.name + "\t" + weight;
+		}
+	}
+
+	private void addConnectionToGraph(Node nodeA, Node nodeB){
+		int index;
+		if((index = graph.indexOf(new Element(nodeA, nodeB)))>=0)
+			graph.get(index).weight++;
+		else
+			graph.add(new Element(nodeA, nodeB));
+	}
+
+	public NodeGetGraph(String name, Boolean canSendMessages) {
+		super(name, canSendMessages);
+	}
+
+	@Override
+	public void prepareSendPackets(NodeGraph nodeGraph, ArrayList<Node> neighborNodes) {
+		if(this.nodeGraph == null)
+			this.nodeGraph = nodeGraph;
+		for(Node nextNode : neighborNodes) {
+			addConnectionToGraph(this, nextNode);
+			nodeGraph.addTransfer(packet, this, nextNode);
+		}
+	}
+
+	@Override
+	public void initialize(NodeGraph nodeGraph) {
+	}
+
+	@Override
+	public void addPacket(Packet packet) {
+	}
+
+	@Override
+	public void removePacket(Packet packet) {
+	}
+
+	private void computeCliques() {
+		System.out.println("Computing k-cliques...");
+		CliqueAlg.getKCliques(nodeGraph);
+		System.out.println("done.");
+		CliqueAlg.printCliques();
+
+		System.out.println();
+		System.out.println();
+
+		CliqueAlg.createComunities();
+		CliqueAlg.printCliques();
+		int i = Main.inputDataConfigFileName.lastIndexOf("/");
+		String filename = Main.inputDataConfigFileName.substring(0, i + 1) + "communities.txt";
+		CliqueAlg.printCliquesToFile(filename, nodeGraph);
+	}
+
+	public String toString() {
+//		if(computeCliques) {
+			//computeCliques = false;
+			//computeCliques();
+		//}
+		if(!canPrint)
+			return "";
+		canPrint = false;
+		String ret = "";
+		for(Element el : graph)
+			ret += el + "\n";
+		return ret;
+		//return super.toString();
+	}
+}

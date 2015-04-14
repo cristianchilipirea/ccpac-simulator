@@ -1,0 +1,4 @@
+[Input]
+nodeGraphFileName = data/upb2011/upb2011.dat
+nodeGraphSocialFileName = data/upb2011/social.dat
+inputType = InputUPB2011

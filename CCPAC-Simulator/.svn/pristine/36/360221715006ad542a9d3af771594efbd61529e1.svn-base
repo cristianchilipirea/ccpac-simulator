@@ -1,0 +1,11 @@
+[Settings]
+inputDataConfigFileName = data/reality/config.ini
+nodeType = NodeDLife
+connectionType = Connection
+schedulerType = SchedulerExtended
+messageType = Message
+packetType = Packet
+printStatisticsType = PrintStatisticsPacketTTL
+useSocialData = false
+simulationTimeType = SimulationTimeEvent
+messageGeneratorType = MessageGeneratorExtended

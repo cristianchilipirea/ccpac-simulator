@@ -1,0 +1,37 @@
+package node;
+
+import java.util.ArrayList;
+import utils.CliqueAlg;
+import main.NodeGraph;
+
+
+public class NodeBubbleRAP extends Node {
+	static boolean needsInitialization = true;
+	double localCentrality = 0;
+	double globalCentrality = 0;
+
+	public NodeBubbleRAP(String name, Boolean canSendMessages) {
+		super(name, canSendMessages);
+	}
+
+	public void initialize(NodeGraph nodeGraph) {
+		if(!needsInitialization)
+			return;
+		needsInitialization = false;
+
+		System.out.println("Computing k-cliques...");
+		CliqueAlg.getKCliques(nodeGraph);
+		System.out.println("done.");
+		CliqueAlg.printCliques();
+
+		System.out.println();
+		System.out.println();
+
+		CliqueAlg.createComunities();
+		CliqueAlg.printCliques();
+	}
+
+	@Override
+	public void prepareSendPackets(NodeGraph nodeGraph, ArrayList<Node> neighborNodes) {
+	}
+}

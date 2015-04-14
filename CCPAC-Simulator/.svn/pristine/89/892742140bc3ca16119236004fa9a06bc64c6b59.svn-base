@@ -1,0 +1,69 @@
+package input;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import node.Node;
+import connection.Connection;
+
+import main.Factory;
+import main.NodeGraph;
+
+public class InputReality extends Input {
+	private static final String startDate = "2004-07-26 00:00:00";
+	private static final int MAX_NODE_ID = 97;
+	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+	@Override
+	public NodeGraph readNodeGraph(String fileName) throws IOException {
+		BufferedReader br = new BufferedReader(new FileReader(fileName));
+		NodeGraph nodeGraph = new NodeGraph();
+		String line = "";
+		String[] columns;
+		line = br.readLine();
+		Long startDateTime = (long) 0;
+		try {
+			startDateTime = sdf.parse(startDate).getTime() / 1000;
+		} catch (ParseException e1) {
+		}
+		while((line = br.readLine()) != null) {
+			columns = line.split("\t");
+
+			String nodeAName = columns[2].trim();
+			String nodeBName = columns[3].trim();
+
+			if(Integer.parseInt(nodeAName) > MAX_NODE_ID || Integer.parseInt(nodeBName) > MAX_NODE_ID)
+				continue;
+
+			Long startTime = (long)0;
+			Long stopTime = (long)0;
+
+			try {
+				startTime = sdf.parse(columns[0]).getTime() / 1000;
+				stopTime = sdf.parse(columns[1]).getTime() / 1000;
+			} catch(ParseException e) {}
+
+			if(startTime < startDateTime || stopTime < startDateTime)
+				continue;
+
+			Node nodeA;
+			Node nodeB;
+
+			if((nodeA = nodeGraph.getNode(nodeAName)) == null) {
+				nodeA = Factory.getNode(nodeAName, true);
+				nodeGraph.addNode(nodeA);
+			}
+			if((nodeB = nodeGraph.getNode(nodeBName)) == null) {
+				nodeB = Factory.getNode(nodeBName, true);
+				nodeGraph.addNode(nodeB);
+			}
+
+			nodeGraph.addConnection(new Connection(nodeA, nodeB, 1, startTime, stopTime));
+		}
+		br.close();
+		return nodeGraph;
+	}
+
+}

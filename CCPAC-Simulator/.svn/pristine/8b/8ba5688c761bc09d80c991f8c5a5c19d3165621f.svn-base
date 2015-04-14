@@ -1,0 +1,6 @@
+TODO:
+
+Add better message generator maybe zipf I think?
+
+remove and add packets should be added to Node
+Epidemic should then just never remove messages and not have 2 lists

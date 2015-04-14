@@ -1,0 +1,264 @@
+package utils;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import node.Node;
+import node.NodeGetGraph;
+
+import main.NodeGraph;
+
+import connection.Connection;
+import connection.SocialConnection;
+
+
+//TODO either make this general or insert into nodes that need it!
+public class CliqueAlg {
+	private static final long THRESHOLD = 600;
+	private static int K_CLIQUE_SIZE = 4;
+	private static ArrayList<ArrayList<Node>> cliques = new ArrayList<ArrayList<Node>>();
+
+	public static  void getMaxCliques(NodeGraph nodeGraph) {
+		if(nodeGraph != null) {
+			ArrayList<Node> potentialClique = new ArrayList<Node>();
+			ArrayList<Node> candidates = new ArrayList<Node>();
+			ArrayList<Node> alreadyFound = new ArrayList<Node>();
+
+			candidates.addAll(nodeGraph.nodes);
+			findCliques(potentialClique, candidates, alreadyFound, nodeGraph);
+		}
+	}
+
+	public static void getKCliques(NodeGraph nodeGraph) {
+		if(nodeGraph != null) {
+			int i = 1;
+			for(Node n : nodeGraph.nodes) {
+				System.out.println(i + "/" + nodeGraph.nodes.size());
+				i++;
+				ArrayList<Node> clique = new ArrayList<Node>();
+				clique.add(n);
+				doKCliqueBacktracking(clique, 1, nodeGraph);
+			}
+		}
+	}
+
+	//Bron–Kerbosch algorithm
+	public static void findCliques(ArrayList<Node> potentialClique, ArrayList<Node> candidates, ArrayList<Node> alreadyFound, NodeGraph nodeGraph) {
+		ArrayList<Node> candidatesCopy = new ArrayList<Node>(candidates);
+		SocialConnection connection;
+		SocialConnection connectionReversed;
+
+		for (Node candidate : candidatesCopy) {
+			ArrayList<Node> newCandidates = new ArrayList<Node>();
+			ArrayList<Node> newAlreadyFound = new ArrayList<Node>();
+
+			potentialClique.add(candidate);
+			candidates.remove(candidate);
+
+			for (Node newCandidate : candidates) {
+				connection = new SocialConnection(candidate,  newCandidate);
+				connectionReversed = new SocialConnection(newCandidate, candidate);
+				if(nodeGraph.socialConnections.contains(connection) && nodeGraph.socialConnections.contains(connectionReversed)) {
+					newCandidates.add(newCandidate);
+				}
+			}
+
+			for (Node newFound : alreadyFound) {
+				connection = new SocialConnection(candidate,  newFound);
+				connectionReversed = new SocialConnection(newFound, candidate);
+				if(nodeGraph.socialConnections.contains(connection) && 
+					nodeGraph.socialConnections.contains(connectionReversed)) {
+					newAlreadyFound.add(newFound);
+				}
+			}
+
+			if(newCandidates.isEmpty() && newAlreadyFound.isEmpty()) {
+				cliques.add(new ArrayList<Node>(potentialClique));
+			} else {
+				findCliques(potentialClique, newCandidates, newAlreadyFound, nodeGraph);
+			}
+
+			potentialClique.remove(candidate);
+			alreadyFound.add(candidate);
+		}
+	}
+
+	public static void doKCliqueBacktracking(ArrayList<Node> potentialClique, int level, NodeGraph nodeGraph) {
+		if(level == K_CLIQUE_SIZE && !cliquesContains(potentialClique, cliques)) {
+			cliques.add(potentialClique);
+		} else if(level < K_CLIQUE_SIZE){
+			level = level + 1;
+			ArrayList<ArrayList<Node>> candidates = getKCliqueCandidates(potentialClique, nodeGraph);
+
+			for(ArrayList<Node> candidate : candidates) {
+				doKCliqueBacktracking(candidate, level, nodeGraph);
+			}
+		}
+	}
+
+	public static ArrayList<ArrayList<Node>> getKCliqueCandidatesSocial(ArrayList<Node> clique, NodeGraph nodeGraph) {
+		ArrayList<ArrayList<Node>> candidates = new ArrayList<ArrayList<Node>>();
+		boolean ok = false;
+		for(Node candidate : nodeGraph.nodes) {
+			if (!clique.contains(candidate)) {
+				ok = true;
+				for(Node cliqueNode : clique) {
+					SocialConnection connection = new SocialConnection(cliqueNode,  candidate);
+					SocialConnection connectionReversed = new SocialConnection(candidate, cliqueNode);
+					ok = ok && (nodeGraph.socialConnections.contains(connection) || nodeGraph.socialConnections.contains(connectionReversed));
+				}
+
+				if (ok) {
+					ArrayList<Node> newClique = new ArrayList<Node>();
+					newClique.addAll(clique);
+					newClique.add(candidate);
+					candidates.add(newClique);
+				}
+			}
+		}
+		return candidates;
+	}
+
+	public static ArrayList<ArrayList<Node>> getKCliqueCandidates(ArrayList<Node> clique, NodeGraph nodeGraph) {
+		ArrayList<ArrayList<Node>> candidates = new ArrayList<ArrayList<Node>>();
+		boolean ok = false;
+		for(Node candidate : nodeGraph.nodes) {//TODO..can be pruned (start from max element from clique)
+			if (!clique.contains(candidate)) {
+				ok = true;
+				for(Node cliqueNode : clique) {
+					int index = NodeGetGraph.graph.indexOf(new NodeGetGraph.Element(cliqueNode, candidate));
+					ok = ok && index >= 0 && NodeGetGraph.graph.get(index).weight > THRESHOLD ;
+				}
+
+				if (ok) {
+					ArrayList<Node> newClique = new ArrayList<Node>();
+					newClique.addAll(clique);
+					newClique.add(candidate);
+					candidates.add(newClique);
+				}
+			}
+		}
+		return candidates;
+	}
+
+	public static boolean cliqueEquals(ArrayList<Node> clique1, ArrayList<Node> clique2) {
+		for (Node n : clique1) {
+			if(!clique2.contains(n)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static boolean cliquesContains(ArrayList<Node> clique, ArrayList<ArrayList<Node>> cliques) {
+		for(ArrayList<Node> c : cliques) {
+			if(cliqueEquals(c, clique))
+				return true;
+		}
+		return false;
+	}
+
+	public static void createComunities() {//hint: it does it throw merging and magic
+		//decide what to merge
+		ArrayList<ArrayList<ArrayList<Node>>> toBeMerged = new ArrayList<ArrayList<ArrayList<Node>>>();
+		for (ArrayList<Node> clique : cliques) {
+			insertClique(clique,toBeMerged);
+		}
+
+		cliques.clear();
+		//merge
+		for(ArrayList<ArrayList<Node>> bucket : toBeMerged) {
+			cliques.add(mergeCliques(bucket));
+		}
+	}
+
+	public static ArrayList<Node> mergeCliques(ArrayList<ArrayList<Node>> bucket) {
+		ArrayList<Node> returnClique = bucket.get(0);
+		bucket.remove(0);
+		for(ArrayList<Node> clique : bucket)
+			for(Node n : clique)
+				if(!returnClique.contains(n))
+					returnClique.add(n);
+
+		return returnClique;
+	}
+	
+	private static void insertClique(ArrayList<Node> clique, ArrayList<ArrayList<ArrayList<Node>>> toBeMerged) {
+		boolean sw = true;
+		ArrayList<ArrayList<Node>> oldBucket = null;
+		ArrayList<ArrayList<ArrayList<Node>>> toBeRemoved = new ArrayList<ArrayList<ArrayList<Node>>>();
+		for(ArrayList<ArrayList<Node>> bucket : toBeMerged) {
+			for(ArrayList<Node> mClique : bucket) {
+				if(matchKNodes(K_CLIQUE_SIZE - 1, mClique, clique)) {
+					if(sw) {
+						bucket.add(clique);
+						oldBucket = bucket;
+					}
+					else { // Merge the buckets if they have an element in common
+						oldBucket.addAll(bucket);
+						toBeRemoved.add(bucket);
+					}
+					sw = false;
+					break; //HERE BE DRAGONS
+				}
+			}
+		}
+		toBeMerged.removeAll(toBeRemoved);
+		if(sw) {
+			ArrayList<ArrayList<Node>> bucket = new ArrayList<ArrayList<Node>>();
+			bucket.add(clique);
+			toBeMerged.add(bucket);
+		}
+	}
+
+	private static boolean matchKNodes(int k, ArrayList<Node> cliqueA, ArrayList<Node> cliqueB) {
+		int i = 0;
+		for(Node A : cliqueA)
+			for(Node B : cliqueB)
+				if(A.equals(B))
+					i++;
+		return i==k;
+	}
+
+	public static void printCliques() {
+		for(ArrayList<Node> clique : cliques) {
+			System.out.print("Clique: ");
+			for(Node node : clique) {
+				System.out.print(node + " ");
+			}
+			System.out.println();
+		}
+	}
+
+	public static void printCliquesToFile(String filename, NodeGraph nodeGraph) {
+		BufferedWriter br  = null;
+		int freeNodeCommunityIndex = cliques.size();
+		try {
+			br = new BufferedWriter(new FileWriter(filename));
+			boolean inClique = false;
+			String line = "NodeID\tCommunities\n";
+			br.write(line);
+			for(Node node : nodeGraph.nodes) {
+				inClique = false;
+				line = node.toString();
+				for(int i = 0; i < cliques.size(); i++) {
+					if(cliques.get(i).contains(node)) {
+						inClique = true;
+						line += "\t" + i;
+					}
+				}
+				if (!inClique) {
+					line += "\t" + freeNodeCommunityIndex;
+					freeNodeCommunityIndex ++;
+				}
+				line += "\n";
+				br.write(line);
+			}
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}

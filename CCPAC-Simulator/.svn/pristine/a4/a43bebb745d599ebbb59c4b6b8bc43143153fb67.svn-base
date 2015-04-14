@@ -1,0 +1,4 @@
+[Input]
+nodeGraphFileName = data/test/contacts.dat
+nodeGraphSocialFileName = 
+inputType = InputTest

@@ -1,0 +1,4 @@
+[Input]
+nodeGraphFileName = data/reality/contacts.dat
+nodeGraphSocialFileName =
+inputType = InputReality

@@ -1,0 +1,60 @@
+package simulationTime;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
+import main.NodeGraph;
+
+import connection.Connection;
+
+
+public class SimulationTimeEvent extends SimulationTime {
+
+	ArrayList<Long> events = new ArrayList<Long>();
+	boolean messagesTransfered = true;
+
+	public void setNodeGraph(NodeGraph n)
+	{
+		startTime = n.startTime;
+		calendarStart.setTimeInMillis(startTime*1000);
+		stopTime = n.stopTime;
+		calendarStop.setTimeInMillis(stopTime*1000);
+		currentTime = startTime;
+		for(Connection c : n.connections) {
+			if(!events.contains(c.startTime))
+				events.add(c.startTime);
+			if(!events.contains(c.stopTime))
+				events.add(c.stopTime);
+		}
+		Collections.sort(events);
+		events.remove(0); // the first one does not need to be there
+		n.simTime=this;
+	}
+
+	public long getNextTime()
+	{
+		if(messagesTransfered) {
+			currentTime++;
+			if(currentTime >= events.get(0))
+				events.remove(0);
+		}
+		else {
+			//TODO add check
+			currentTime = events.get(0);
+			events.remove(0);
+		}
+		messagesTransfered = false;
+		return currentTime;
+	}
+
+	public void setMessagesTransfered() {
+		messagesTransfered = true;
+	}
+
+	public void printTime() {
+		System.out.println("Start time: "+calendarStart.getTime());
+		System.out.println("Stop time: "+calendarStop.getTime());
+		System.out.println("Days in trace: "+ getDays());
+		System.out.println("Weeks in trace: "+ getWeeks());
+	}
+}

@@ -1,0 +1,11 @@
+[Settings]
+inputDataConfigFileName = data/cambridge-haggle-imote-infocom06/config.ini
+nodeType = NodeGetGraph
+connectionType = Connection
+schedulerType = Scheduler
+messageType = Message
+packetType = Packet
+printStatisticsType = PrintStatisticsEmpty
+useSocialData = false
+simulationTimeType = SimulationTimeEvent
+messageGeneratorType = MessageGenerator
